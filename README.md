@@ -17,16 +17,16 @@
 - [ ] 服务器日志记录
 
 ### 文件结构
-├─.idea
-│  └─inspectionProfiles
-├─cert 证书
-├─database  数据库
-├─file_repository  服务端仓库
-├─local_repository 本地仓库
-├─venv  
-└─资料
-└─client_2.py 客户端
-└─server_2.py 服务端
+	├─.idea
+	│  └─inspectionProfiles
+	├─cert 证书
+	├─database  数据库
+	├─file_repository  服务端仓库
+	├─local_repository 本地仓库
+	├─venv  
+	└─资料
+	└─client_2.py 客户端
+	└─server_2.py 服务端
 
 
 ### 参考
