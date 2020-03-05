@@ -19,6 +19,9 @@
 - [ ] 封装协议，提供外部接口
 - [x] 使用自定义协议接收/发送
 - [x] 命令解释/图形化界面
+- [ ] 传输文件夹
+- [ ] 上传检测同名文件检测并重命名
+- [ ] 
 
 ### 文件结构
 	├─.idea
@@ -41,7 +44,7 @@
 - [Python3+ssl实现加密通信](https://www.cnblogs.com/lsdb/p/9397530.html) 
 - [廖雪峰Python](https://www.liaoxuefeng.com/wiki/1016959663602400)
 - [进度条打印函数](https://www.cnblogs.com/suguangti/p/10802720.html)
-- [python 函数内部修改全局变量](https://blog.csdn.net/zy13270867781/article/details/80662967)
+- [python 函数内部修改全局变](https://blog.csdn.net/zy13270867781/article/details/80662967)
 - [Python 线程安全（同步锁Lock）详解](http://c.biancheng.net/view/2617.html)
-- [python基于tcp/ip协议的服务端(支持多个客户端同时连接处理)](https://www.cnblogs.com/yuanshuang-club/p/11541622.html)
+- [python基于tcp/ip协议的服务端](https://www.cnblogs.com/yuanshuang-club/p/11541622.html) 
 - [python一句话之利用文件对话框获取文件路径](https://blog.csdn.net/shawpan/article/details/78759199)

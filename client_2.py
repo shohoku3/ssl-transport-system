@@ -10,6 +10,7 @@ import struct
 import tkinter as tk
 from tkinter import filedialog
 import re
+import prettytable as pt
 
 
 class Client(object):
@@ -55,16 +56,33 @@ class Client(object):
                     print(resp['data'])
                     self.SelectFile()
                 elif resp['msg'] == 'ListFile success':
-                    print(resp['data'])
+                    tb = pt.PrettyTable()
+                    tb.field_names = ["filename"]
+                    print(len(resp['data']))
+                    for i in range(len(resp['data'])):
+                        print(resp['data'][i])
+                        tb.add_row(resp['data'][i])
+                    print(tb)
                     self.ActionSelectLogined()
                 elif resp['msg'] == 'DownFileList success':
+
+                    tb = pt.PrettyTable()
+                    tb.field_names = ["filename"]
                     for i in resp['data']:
-                        print(i)
+                        tb.add_row(list(i))
+                    print(tb)
                     file_list = resp['data']
                     self.DownLoadFile(file_list)
                 elif resp['msg'] == 'begin file transport':
-                    print('开始文件接收')
+                    # print('开始文件接收')
                     self.RecvFile()
+                elif resp['msg'] == 'ListUsers success':
+                    tb = pt.PrettyTable()
+                    tb.field_names = ["username", "password", 'action']
+                    tb.add_row([resp['data']['name'], resp['data']['password'], resp['data']['action']])
+                    print(tb)
+
+
             except Exception as ret:
                 self.ssock.close()
                 print(ret)
@@ -82,7 +100,7 @@ class Client(object):
             self.ActionSelect()
 
     def ActionSelectLogined(self):
-        print('请选择您要使用的操作\n上传文件 1 \n查看文件列表 2\n下载文件 3\n用户管理 4')
+        print('请选择您要使用的操作\n上传文件 1 \n查看文件列表 2\n下载文件 3\n用户管理 4\n空间查询 5')
         action = input('请输入要选择的操作')
         if action == '1':
             self.SelectFile()
@@ -101,8 +119,10 @@ class Client(object):
         password = input('请输入密码:')
         if len(name.strip()) == 0:
             print('警告：用户名不能为空，请重新输入')
+            self.Login()
         elif len(password.strip()) == 0:
             print('警告：密码不能为空，请重新输入.')
+            self.Login()
         else:
             api = 'api/get/login'
             md5 = hashlib.md5()
@@ -117,10 +137,14 @@ class Client(object):
         c_password = input('请再次输入密码')
         if len(name.strip()) == 0:
             print('警告：用户名不能为空，请重新输入')
+            self.Register()
         elif len(password.strip()) == 0:
             print('警告：密码不能为空，请重新输入.')
+            self.Register()
+
         elif c_password != password:
             print('警告：两次输入的密码不一致，请重新输入。')
+            self.Register()
         else:
             api = 'api/get/register'
             md5 = hashlib.md5()
@@ -134,8 +158,12 @@ class Client(object):
         root = tk.Tk()
         root.withdraw()
         file_path = filedialog.askopenfilename()
-        print('Filepath:', file_path)
-        self.SendFile(file_path)
+        if len(file_path) != 0:
+            print('Filepath:', file_path)
+            self.SendFile(file_path)
+        else:
+            print('警告：没有选择文件')
+            self.ActionSelectLogined()
 
     def ListFile(self):
         api = 'api/get/filelist'
@@ -165,8 +193,8 @@ class Client(object):
             # 把序列化的header长度和header正文打包发送
             self.ssock.send(header_struct.pack(*(len(header_str), header_str)))
             with open(file_path, 'rb') as f:
-                for line in f:
-                    self.ssock.send(line)
+                line = f.read()
+                self.ssock.sendall(line)
         except Exception as exp:
             print(exp)
 
@@ -215,8 +243,8 @@ class Client(object):
                         print_progress(recv_per)
                 endtime = time.time()
                 time_consuming = endtime - starttime
-                print('下载耗时：'+str(int(time_consuming % 60)) + 's')
-
+                print('下载耗时：' + str(int(time_consuming % 60)) + 's')
+                self.ActionSelectLogined()
             except Exception as exp:
                 print(exp)
 

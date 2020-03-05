@@ -35,7 +35,7 @@ class Server(object):
                 recvmsg = self.clientsocket.recv(1024)
                 recvmsg = recvmsg.decode('utf-8')
                 recvmsg = json.loads(recvmsg)
-                print(recvmsg['api'])
+                #print(recvmsg['api'])
                 if recvmsg['api'] == 'api/get/login':
                     self.check_login(recvmsg['name'], recvmsg['password'])
                 elif recvmsg['api'] == 'api/get/register':
@@ -51,6 +51,8 @@ class Server(object):
                     self.file_list()
                 elif recvmsg['api']=='api/get/downfilelist':
                     self.downfile_list()
+                elif recvmsg['api']=='api/get/userlist':
+                    self.users_list()
 
             except Exception as ret:
                 self.clientsocket.close()
@@ -58,9 +60,9 @@ class Server(object):
                 break
 
     def RecvFile(self):
-        starttime = time.time()
         header_struct = struct.Struct('i1024s')
         # 接收序列化的header数据包
+        starttime = time.time()
         packed_haeder = self.clientsocket.recv(1024 + 4)
         # 解包得到序列化的header的长度和header正文
         header_size, header_s = header_struct.unpack(packed_haeder)
@@ -85,12 +87,11 @@ class Server(object):
                 resp = json.dumps(resp)
                 self.SendMsg(resp)
                 time_consuming = endtime - starttime
-                print('\n')
-                print(str(int(time_consuming % 60)) +'s')
+                print('上传耗时：'+str(int(time_consuming % 60)) +'s')
 
             except Exception as exp:
                 msg = 'Transport default'
-                data = '传输失败'
+                data = '警告：传输失败'
                 code = 300
                 resp = {'msg': msg, 'code': code, 'data': data}
                 resp = json.dumps(resp)
@@ -126,23 +127,20 @@ class Server(object):
         except Exception as exp:
             print(exp)
 
-
-
-
     def check_login(self, username, password):
         f = open("./database/users.txt", 'r+')
         user_info = eval(f.read())
         f.close()
         if username == user_info['name'] and password == user_info['password']:
             code = 200
-            data = '登录成功可以开始进一步操作'
+            data = '成功：登录成功可以开始进一步操作'
             msg = 'login success'
             resp = {'msg': msg, 'code': code, 'data': data}
             resp = json.dumps(resp, ensure_ascii=False)
             self.SendMsg(resp)
         else:
             msg = 'login default'
-            data = '登录失败用户名或密码错误'
+            data = '警告：登录失败用户名或密码错误'
             code = 300
             resp = {'msg': msg, 'code': code, 'data': data}
             resp = json.dumps(resp)
@@ -157,7 +155,7 @@ class Server(object):
             f.writelines(str(user))
             f.close()
             msg = 'register ok'
-            data = '注册成功'
+            data = '成功：注册成功'
             code = 200
             resp = {'msg': msg, 'code': code, 'data': data}
             resp = json.dumps(resp)
@@ -166,7 +164,7 @@ class Server(object):
             f.close()
             msg = 'register default'
             code = 300
-            data = '注册失败'
+            data = '警告：注册失败，用户名重复'
             resp = {'msg': msg, 'code': code, 'data': data}
             resp = json.dumps(resp)
             self.SendMsg(resp)
@@ -183,6 +181,14 @@ class Server(object):
         resp = json.dumps(resp)
         self.SendMsg(resp)
 
+    def users_list(self):
+        with open("./database/users.txt", 'r+') as f:
+            user_info = eval(f.read())
+            resp = {'msg': 'ListUsers success', 'code': 200, 'data': user_info}
+            resp = json.dumps(resp)
+            self.SendMsg(resp)
+
+
 def print_progress(percent, width=50):
     # 字符串拼接的嵌套使用
     show_str = ('上传中！[%%-%ds]' % width) % (int(width * percent / 100) * '>')
@@ -192,7 +198,6 @@ def print_progress(percent, width=50):
 def main():
     S = Server()
     S.WaitClient()
-
 
 if __name__ == '__main__':
     main()
