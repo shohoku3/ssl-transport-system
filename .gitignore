@@ -1,0 +1,7 @@
+#gitignore
+/资料
+/database
+/file_repository
+/local_repository
+client.py
+server.py
