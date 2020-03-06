@@ -45,7 +45,7 @@ class Client(object):
                     self.Login()
                 elif resp['msg'] == 'register success':
                     print(resp['data'])
-                    self.Login()
+                    self.ActionSelect()
                 elif resp['msg'] == 'register default':
                     print(resp['data'])
                     self.Register()
@@ -57,31 +57,33 @@ class Client(object):
                     self.SelectFile()
                 elif resp['msg'] == 'ListFile success':
                     tb = pt.PrettyTable()
-                    tb.field_names = ["filename"]
-                    print(len(resp['data']))
-                    for i in range(len(resp['data'])):
-                        print(resp['data'][i])
-                        tb.add_row(resp['data'][i])
+                    tb.field_names = ["filename", 'filesize']
+                    for i in resp['data']:
+                        tb.add_row([i['file_name'], i['file_size']])
                     print(tb)
                     self.ActionSelectLogined()
                 elif resp['msg'] == 'DownFileList success':
-
                     tb = pt.PrettyTable()
-                    tb.field_names = ["filename"]
-                    for i in resp['data']:
-                        tb.add_row(list(i))
+                    tb.add_column('filename',resp['data'])
                     print(tb)
                     file_list = resp['data']
                     self.DownLoadFile(file_list)
                 elif resp['msg'] == 'begin file transport':
-                    # print('开始文件接收')
                     self.RecvFile()
                 elif resp['msg'] == 'ListUsers success':
                     tb = pt.PrettyTable()
-                    tb.field_names = ["username", "password", 'action']
-                    tb.add_row([resp['data']['name'], resp['data']['password'], resp['data']['action']])
+                    tb.field_names = ["username", "password"]
+                    for i in range(len(resp['data'])):
+                        tb.add_row([resp['data'][i]['name'], resp['data'][i]['password']])
                     print(tb)
-
+                    self.user_operation()
+                    self.ActionSelectLogined()
+                elif resp['msg']=='checkdataspace success':
+                    tb = pt.PrettyTable()
+                    tb.field_names = ["空间使用率", "空间使用量",'空间总量']
+                    tb.add_row([resp['data']['Percentage_used'], resp['data']['allfilesize'],resp['data']['dataspace']])
+                    print(tb)
+                    self.ActionSelectLogined()
 
             except Exception as ret:
                 self.ssock.close()
@@ -100,7 +102,7 @@ class Client(object):
             self.ActionSelect()
 
     def ActionSelectLogined(self):
-        print('请选择您要使用的操作\n上传文件 1 \n查看文件列表 2\n下载文件 3\n用户管理 4\n空间查询 5')
+        print('请选择您要使用的操作\n上传文件 1 \n查看文件列表 2\n下载文件 3\n用户管理 4\n空间查询 5\n返回上一层 exit')
         action = input('请输入要选择的操作')
         if action == '1':
             self.SelectFile()
@@ -113,6 +115,10 @@ class Client(object):
             self.DownloadFileList()
         elif action == '4':
             self.UserList()
+        elif action == '5':
+            self.CheckDataspace()
+        elif action == 'exit':
+            self.ActionSelect()
 
     def Login(self):
         name = input('请输入用户名:')
@@ -141,7 +147,6 @@ class Client(object):
         elif len(password.strip()) == 0:
             print('警告：密码不能为空，请重新输入.')
             self.Register()
-
         elif c_password != password:
             print('警告：两次输入的密码不一致，请重新输入。')
             self.Register()
@@ -253,6 +258,30 @@ class Client(object):
         userinfo = {'api': api}
         userinfo = json.dumps(userinfo)
         self.SendMsg(userinfo)
+
+    def user_operation(self):
+        print('用户操作有\n修改用户名     1\n删除用户      2\n修改用户权限   3\n')
+        action=input('选择的用户操作是')
+        if action=='1':
+            pass
+        elif action=='2':
+            username=input('请输入需要删除的用户')
+            userinfo={'data':username,'api':'api/del/username'}
+            userinfo = json.dumps(userinfo)
+            self.SendMsg(userinfo)
+        elif action=='3':
+            pass
+    def CheckDataspace(self):
+        api = 'api/get/dataspace'
+        userinfo = {'api': api}
+        userinfo = json.dumps(userinfo)
+        self.SendMsg(userinfo)
+
+    def warnning_print(self):
+        pass
+
+    def success_print(self):
+        pass
 
 
 def print_progress(percent, width=50):

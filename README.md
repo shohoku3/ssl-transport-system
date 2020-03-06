@@ -15,13 +15,13 @@
 - [x] 文件浏览
 - [x] 下载进度打印
 - [ ] 服务器日志记录
-- [ ] 读写磁盘文件/磁盘空间检查
+- [x] 读写磁盘文件/磁盘空间检查
 - [ ] 封装协议，提供外部接口
 - [x] 使用自定义协议接收/发送
 - [x] 命令解释/图形化界面
 - [ ] 传输文件夹
 - [ ] 上传检测同名文件检测并重命名
-- [ ] 
+- [ ] 表格打印错误问题
 
 ### 文件结构
 	├─.idea
@@ -48,3 +48,5 @@
 - [Python 线程安全（同步锁Lock）详解](http://c.biancheng.net/view/2617.html)
 - [python基于tcp/ip协议的服务端](https://www.cnblogs.com/yuanshuang-club/p/11541622.html) 
 - [python一句话之利用文件对话框获取文件路径](https://blog.csdn.net/shawpan/article/details/78759199)
+- [python prettytable模块](https://www.cnblogs.com/hdk1993/p/8017223.html)
+

@@ -35,7 +35,7 @@ class Server(object):
                 recvmsg = self.clientsocket.recv(1024)
                 recvmsg = recvmsg.decode('utf-8')
                 recvmsg = json.loads(recvmsg)
-                #print(recvmsg['api'])
+                # print(recvmsg['api'])
                 if recvmsg['api'] == 'api/get/login':
                     self.check_login(recvmsg['name'], recvmsg['password'])
                 elif recvmsg['api'] == 'api/get/register':
@@ -43,17 +43,20 @@ class Server(object):
                 elif recvmsg['api'] == 'api/post/file':
                     # print('检测到文件传输请求')
                     self.RecvFile()
-                elif recvmsg['api']=='api/get/file':
-                    #print('检测到文件下载请求)
-                    file_name=recvmsg['data']
+                elif recvmsg['api'] == 'api/get/file':
+                    # print('检测到文件下载请求)
+                    file_name = recvmsg['data']
                     self.SendFile(file_name)
                 elif recvmsg['api'] == 'api/get/filelist':
                     self.file_list()
-                elif recvmsg['api']=='api/get/downfilelist':
+                elif recvmsg['api'] == 'api/get/downfilelist':
                     self.downfile_list()
-                elif recvmsg['api']=='api/get/userlist':
+                elif recvmsg['api'] == 'api/get/userlist':
                     self.users_list()
-
+                elif recvmsg['api']=='api/del/username':
+                    self.del_user(recvmsg['data'])
+                elif recvmsg['api']=='api/get/dataspace':
+                    self.checkdataspace()
             except Exception as ret:
                 self.clientsocket.close()
                 print(ret)
@@ -87,7 +90,7 @@ class Server(object):
                 resp = json.dumps(resp)
                 self.SendMsg(resp)
                 time_consuming = endtime - starttime
-                print('上传耗时：'+str(int(time_consuming % 60)) +'s')
+                print('上传耗时：' + str(int(time_consuming % 60)) + 's')
 
             except Exception as exp:
                 msg = 'Transport default'
@@ -101,15 +104,15 @@ class Server(object):
     def SendMsg(self, msg):
         self.clientsocket.send(msg.encode('utf-8'))
 
-    def SendFile(self,file_name):
+    def SendFile(self, file_name):
         try:
-            #发送信号告诉客户端接收文件
-            info = {'msg': 'begin file transport','code':200,'data':'准备开始文件传输'}
+            # 发送信号告诉客户端接收文件
+            info = {'msg': 'begin file transport', 'code': 200, 'data': '准备开始文件传输'}
             info = json.dumps(info)
             self.SendMsg(info)
             header_struct = struct.Struct('i1024s')
             # data_struct = struct.Struct('1024s')
-            file_path='./file_repository'+'/'+file_name
+            file_path = './file_repository' + '/' + file_name
             header = {
                 'file_name': file_name,
                 'file_size': os.path.getsize(file_path),
@@ -121,17 +124,19 @@ class Server(object):
             header_str = pickle.dumps(header)
             # 把序列化的header长度和header正文打包发送
             self.clientsocket.send(header_struct.pack(*(len(header_str), header_str)))
-            with open(file_path,'rb') as f:
+            with open(file_path, 'rb') as f:
                 for line in f:
                     self.clientsocket.send(line)
         except Exception as exp:
             print(exp)
 
     def check_login(self, username, password):
-        f = open("./database/users.txt", 'r+')
-        user_info = eval(f.read())
-        f.close()
-        if username == user_info['name'] and password == user_info['password']:
+        with open("./database/users.txt", 'r+') as f:
+            user_info = f.readlines()
+        for i in range(len(user_info)):
+            user_info[i]=user_info[i].rstrip('\n')
+        user={'name':username,'password':password}
+        if str(user) in user_info:
             code = 200
             data = '成功：登录成功可以开始进一步操作'
             msg = 'login success'
@@ -147,33 +152,46 @@ class Server(object):
             self.SendMsg(resp)
 
     def check_register(self, username, password):
-        f = open("./database/users.txt", 'r+')
-        user_info = eval(f.read())
-        if username not in user_info['name']:
+        with open("./database/users.txt", 'r+') as f:
+            user_info = f.readlines()
+        user_name=[]
+        for i in range(len(user_info)):
+            user_name.append(eval(user_info[i].rstrip('\n'))['name'])
+        if username not in user_name:
             user = {'name': username, 'password': password}
             user = json.dumps(user)
-            f.writelines(str(user))
+            f=open("./database/users.txt", 'a+')
+            f.write(user+'\n')
             f.close()
-            msg = 'register ok'
-            data = '成功：注册成功'
-            code = 200
-            resp = {'msg': msg, 'code': code, 'data': data}
+            resp = {'msg': 'register success', 'code': 200, 'data': '成功：注册成功'}
             resp = json.dumps(resp)
+            print('fasong')
             self.SendMsg(resp)
         else:
-            f.close()
-            msg = 'register default'
-            code = 300
-            data = '警告：注册失败，用户名重复'
-            resp = {'msg': msg, 'code': code, 'data': data}
+            resp = {'msg': 'register default', 'code': 300, 'data': '警告：注册失败，用户名重复'}
             resp = json.dumps(resp)
             self.SendMsg(resp)
 
     def file_list(self):
         filelist = os.listdir('./file_repository')
-        resp = {'msg': 'ListFile success', 'code': 200, 'data': filelist}
+        data=[]
+        for i in filelist:
+            file_path = './file_repository/' + i
+            file_info = {'file_name': i,
+                         'file_size': self.filesize_format(os.path.getsize(file_path))
+                         }
+            data.append(file_info)
+        resp = {'msg': 'ListFile success', 'code': 200, 'data': data}
         resp = json.dumps(resp)
         self.SendMsg(resp)
+
+    def filesize_format(self,file_size):
+        if file_size<1024*1024:
+            file_size=str(int(file_size / float(1024)))+'KB'
+            return file_size
+        elif 1024*1024<file_size<1024*1024*1024:
+            file_size=str(int(file_size /float(1024*1024)))+'MB'
+            return file_size
 
     def downfile_list(self):
         filelist = os.listdir('./file_repository')
@@ -183,11 +201,33 @@ class Server(object):
 
     def users_list(self):
         with open("./database/users.txt", 'r+') as f:
-            user_info = eval(f.read())
-            resp = {'msg': 'ListUsers success', 'code': 200, 'data': user_info}
+            user_info = f.readlines()
+        for i in range(len(user_info)):
+            user_info[i] = eval(user_info[i].rstrip('\n'))
+        resp = {'msg': 'ListUsers success', 'code': 200, 'data': user_info}
+        resp = json.dumps(resp)
+        self.SendMsg(resp)
+
+    def del_user(self,username):
+        pass
+
+    def checkdataspace(self):
+        filelist=os.listdir('./file_repository')
+        allfilesize=0
+        dataspace=1*1024
+        for i in filelist:
+            allfilesize+=os.path.getsize('./file_repository/'+i)
+        allfilesize=self.filesize_format(allfilesize)
+        if allfilesize[-2:]=='KB':
+            Percentage_used='0%'
+            resp = {'msg': 'checkdataspace success', 'code': 200, 'data': {'Percentage_used':Percentage_used,'allfilesize':allfilesize,'dataspace':str(dataspace)+'MB'}}
             resp = json.dumps(resp)
             self.SendMsg(resp)
-
+        else:
+            Percentage_used=str(round(int(allfilesize[:-2])/dataspace,2))+'%'
+            resp = {'msg': 'checkdataspace success', 'code': 200, 'data': {'Percentage_used':Percentage_used,'allfilesize':allfilesize,'dataspace':str(dataspace)+'MB'}}
+            resp = json.dumps(resp)
+            self.SendMsg(resp)
 
 def print_progress(percent, width=50):
     # 字符串拼接的嵌套使用
@@ -198,6 +238,7 @@ def print_progress(percent, width=50):
 def main():
     S = Server()
     S.WaitClient()
+
 
 if __name__ == '__main__':
     main()
