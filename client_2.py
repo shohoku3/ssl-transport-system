@@ -84,7 +84,15 @@ class Client(object):
                     tb.add_row([resp['data']['Percentage_used'], resp['data']['allfilesize'],resp['data']['dataspace']])
                     print(tb)
                     self.ActionSelectLogined()
-
+                elif resp['msg']=='del user success':
+                    print(resp['data'])
+                    self.UserList()
+                elif resp['msg']=='modify user info success':
+                    print(resp['data'])
+                    self.UserList()
+                elif resp['msg']=='number of players req success':
+                    print('当前在%s人' %resp['data'])
+                    self.ActionSelectLogined()
             except Exception as ret:
                 self.ssock.close()
                 print(ret)
@@ -100,9 +108,12 @@ class Client(object):
         elif len(action) == 0:
             print('警告：选项不能为空')
             self.ActionSelect()
+        else:
+            print('警告：输入不合法')
+            self.ActionSelect()
 
     def ActionSelectLogined(self):
-        print('请选择您要使用的操作\n上传文件 1 \n查看文件列表 2\n下载文件 3\n用户管理 4\n空间查询 5\n返回上一层 exit')
+        print('请选择您要使用的操作\n上传文件 1 \n查看文件列表 2\n下载文件 3\n用户管理 4\n空间查询 5\n当前在线人数 6\n返回上一层 exit')
         action = input('请输入要选择的操作')
         if action == '1':
             self.SelectFile()
@@ -117,8 +128,13 @@ class Client(object):
             self.UserList()
         elif action == '5':
             self.CheckDataspace()
+        elif action =='6':
+            self.NumberOfPlayers()
         elif action == 'exit':
             self.ActionSelect()
+        else:
+            print('警告：输入不合法')
+            self.ActionSelectLogined()
 
     def Login(self):
         name = input('请输入用户名:')
@@ -260,22 +276,34 @@ class Client(object):
         self.SendMsg(userinfo)
 
     def user_operation(self):
-        print('用户操作有\n修改用户名     1\n删除用户      2\n修改用户权限   3\n')
+        print('用户操作有\n修改用户     1\n删除用户      2\n修改用户权限   3')
         action=input('选择的用户操作是')
         if action=='1':
-            pass
+            self.user_info_mod()
         elif action=='2':
-            username=input('请输入需要删除的用户')
+            username=input('请输入需要删除的用户名')
             userinfo={'data':username,'api':'api/del/username'}
             userinfo = json.dumps(userinfo)
             self.SendMsg(userinfo)
         elif action=='3':
+            print('功能暂未开放')
             pass
     def CheckDataspace(self):
         api = 'api/get/dataspace'
-        userinfo = {'api': api}
-        userinfo = json.dumps(userinfo)
-        self.SendMsg(userinfo)
+        info = {'api': api}
+        info = json.dumps(info)
+        self.SendMsg(info)
+
+    def user_info_mod(self):
+        username=input('请输入需要修改的用户名')
+        mod_name=input('修改用户名')
+        mod_password=input('修改密码')
+        md5 = hashlib.md5()
+        md5.update(str(mod_password).encode('utf-8'))
+        data = {'name': mod_name, 'password': md5.hexdigest()}
+        usermodinfo={'api':'api/post/userinfomod','data':data,'index_name':username}
+        usermodinfo = json.dumps(usermodinfo)
+        self.SendMsg(usermodinfo)
 
     def warnning_print(self):
         pass
@@ -283,18 +311,22 @@ class Client(object):
     def success_print(self):
         pass
 
+    def NumberOfPlayers(self):
+        api = 'api/get/playersnum'
+        info = {'api': api}
+        info = json.dumps(info)
+        self.SendMsg(info)
+
 
 def print_progress(percent, width=50):
     # 字符串拼接的嵌套使用
     show_str = ('下载中！[%%-%ds]' % width) % (int(width * percent / 100) * '>')
     print('\r%s %d%%' % (show_str, percent), end='')
 
-
 def main():
     C = Client()
     C.Connection()
     C.ActionSelect()
-
 
 if __name__ == '__main__':
     main()
